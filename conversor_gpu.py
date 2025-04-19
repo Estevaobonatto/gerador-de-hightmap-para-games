@@ -476,12 +476,16 @@ class HeightmapGeneratorApp:
         post_proc_frame.columnconfigure(1, weight=1)
         post_proc_frame.columnconfigure(2, weight=1)
 
+        # --- Frame de Controles (no frame rolável) ---
         controls_frame = ttk.Frame(self.scrollable_frame, padding="10")
         controls_frame.pack(fill=tk.X, pady=5, anchor='n')
         self.generate_button = ttk.Button(controls_frame, text="Gerar Heightmap", command=self.generate_heightmap)
         self.generate_button.pack(side=tk.LEFT, padx=5)
         self.save_button = ttk.Button(controls_frame, text="Salvar Imagem", command=self.save_image, state=tk.DISABLED)
         self.save_button.pack(side=tk.LEFT, padx=5)
+        # Adicionar botão de Ajuda
+        self.help_button = ttk.Button(controls_frame, text="Ajuda", command=self._show_help_window)
+        self.help_button.pack(side=tk.RIGHT, padx=5) # Colocar à direita
 
         self.progress_bar = ttk.Progressbar(self.scrollable_frame, orient=tk.HORIZONTAL, length=200, mode='determinate')
 
@@ -1003,6 +1007,201 @@ class HeightmapGeneratorApp:
         self.island_falloff_label.config(state=state)
         self.island_falloff_scale.config(state=state)
         self.island_falloff_display.config(state=state)
+
+    def _show_help_window(self):
+        """Cria e exibe uma janela Toplevel com instruções de uso."""
+        help_win = tk.Toplevel(self.root)
+        help_win.title("Ajuda - Gerador de Heightmap")
+        help_win.geometry("700x600") # Aumentar um pouco
+        help_win.transient(self.root)
+        help_win.grab_set()
+
+        text_frame = ttk.Frame(help_win, padding=10)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        help_text_widget = tk.Text(text_frame, wrap=tk.WORD, yscrollcommand=scrollbar.set, 
+                                     padx=10, pady=10, font=("Segoe UI", 10), 
+                                     borderwidth=0, relief=tk.FLAT) # Melhorar aparência
+        help_text_widget.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=help_text_widget.yview)
+
+        # --- Conteúdo da Ajuda (mesmo texto) ---
+        help_content = """\
+Instruções de Uso - Gerador de Heightmap
+
+Este programa gera imagens de heightmap (mapas de altura) em escala de cinza, \
+úteis para criar terrenos em jogos ou outras aplicações gráficas.\
+Preto representa a menor altitude e branco a maior.
+
+--- Opções Principais ---
+
+*   Largura/Altura: Dimensões da imagem gerada em pixels.
+
+*   Semente (Seed): Um número inicial para o gerador de números aleatórios. \
+    A mesma semente com os mesmos parâmetros sempre produzirá a mesma imagem. \
+    Use o botão "Aleatória" para gerar uma nova semente.
+
+*   Processamento: Escolha entre "CPU" ou "GPU". A GPU (se disponível e \
+    compatível com CUDA) é geralmente muito mais rápida, mas só funciona \
+    com ruído Perlin. Uma GPU compatível e o CUDA Toolkit da NVIDIA \
+    precisam estar instalados.
+
+--- Parâmetros do Ruído ---
+
+*   Tipo: Escolha entre "Simplex" (mais orgânico, disponível apenas na CPU) \
+    ou "Perlin" (clássico, disponível em CPU e GPU).
+
+*   Escala Mundo: Controla o "tamanho" das características do terreno. Valores \
+    maiores criam montanhas/vales maiores (menos frequentes), valores menores \
+    criam detalhes mais finos (mais frequentes).
+
+*   Oitavas: Número de camadas de ruído sobrepostas. Mais oitavas adicionam \
+    mais detalhes, mas aumentam o tempo de geração.
+
+*   Persistência: Controla a influência das oitavas subsequentes. Valores \
+    menores que 1 fazem com que cada oitava tenha menos influência que a \
+    anterior (resultado mais suave). Valores maiores (ex: ~0.5) são comuns.
+
+*   Lacunaridade: Controla o aumento da frequência (detalhe) a cada oitava. \
+    Um valor comum é 2.0 (cada oitava tem o dobro da frequência da anterior).
+
+--- Pós-processamento ---
+
+Estes efeitos são aplicados APÓS a geração do ruído base.
+
+
+*   Habilitar Terraçamento: Agrupa as alturas em níveis discretos (platôs).
+
+    - Níveis: Quantidade de platôs desejada (2 a 99).
+
+*   Habilitar Distorção: Distorce o terreno usando outra camada de ruído, \
+    criando padrões mais sinuosos.
+
+    - Amplitude: Intensidade da distorção.
+
+    - Frequência: Nível de detalhe da distorção.
+
+*   Criar Ilha (Máscara): Aplica um gradiente radial que abaixa as bordas \
+    do mapa, criando uma forma de ilha.
+
+    - Suavidade Borda: Controla a transição da terra para a "água". Valores \
+    menores criam bordas mais íngremes, valores maiores criam transições suaves.
+
+*   Remapear (Potência): Altera a distribuição das alturas. Um expoente > 1.0 \
+    acentua picos e achata vales. Um expoente < 1.0 achata picos e acentua vales. \
+    1.0 não tem efeito.
+
+*   Gerar Lagos (Nível do Mar): Define um nível de altura. Tudo abaixo \
+    desse nível é achatado para criar lagos/oceanos.
+
+    - Nível Mar: Altura (0-255) onde a água começa.
+
+*   Montanhas Detalhadas (Ridged): Modifica o ruído para criar cristas e \
+    vales mais definidos, simulando montanhas erodidas.
+
+--- Controles ---
+
+*   Gerar Heightmap: Aplica os parâmetros e gera a imagem.
+
+*   Salvar Imagem: Salva a imagem gerada (na resolução original) em formato \
+    PNG, JPG, etc.
+
+*   Ajuda: Abre esta janela.
+
+"""
+        
+        # --- Configuração das Tags de Estilo ---
+        help_text_widget.tag_configure("title", font=("Segoe UI", 14, "bold"), 
+                                         justify=tk.CENTER, spacing3=15)
+        help_text_widget.tag_configure("section", font=("Segoe UI", 11, "bold"), 
+                                         spacing1=10, spacing3=8, lmargin1=0, lmargin2=0)
+        help_text_widget.tag_configure("bullet_point", font=("Segoe UI", 10), 
+                                         lmargin1=20, lmargin2=20, spacing1=5) # Indentação para bullets
+        help_text_widget.tag_configure("sub_bullet_point", font=("Segoe UI", 10), 
+                                         lmargin1=40, lmargin2=40, spacing1=3) # Indentação maior
+        help_text_widget.tag_configure("normal_text", font=("Segoe UI", 10), 
+                                          spacing1=5, spacing3=10)
+        help_text_widget.tag_configure("option_name", font=("Segoe UI", 10, "bold"))
+        
+        # Insere o texto
+        help_text_widget.insert(tk.END, help_content)
+        
+        # --- Aplica as Tags ---
+        help_text_widget.tag_add("title", "1.0", "1.end") # Primeira linha é o título
+        help_text_widget.tag_add("normal_text", "3.0", "5.end") # Texto introdutório
+
+        # Aplica tag 'section' aos títulos --- ... ---
+        start_index = "1.0"
+        while True:
+            # Procura por '---' no início da linha, possivelmente com espaços antes
+            match_start = help_text_widget.search(r'^\s*---', start_index, stopindex=tk.END, regexp=True)
+            if not match_start: break
+            line_start = f"{match_start.split('.')[0]}.0"
+            line_end = f"{match_start.split('.')[0]}.end"
+            # Remove a tag normal_text para evitar conflito, caso exista
+            help_text_widget.tag_remove("normal_text", line_start, line_end)
+            help_text_widget.tag_add("section", line_start, line_end)
+            start_index = line_end # Continua busca da linha seguinte
+
+        # Aplica tags aos bullet points (*)
+        start_index = "1.0"
+        while True:
+            # Procura por '*' no início da linha, possivelmente com espaços antes
+            match_start = help_text_widget.search(r'^\s*\*', start_index, stopindex=tk.END, regexp=True)
+            if not match_start: break
+            line_start = f"{match_start.split('.')[0]}.0"
+            line_end = f"{match_start.split('.')[0]}.end"
+            help_text_widget.tag_remove("normal_text", line_start, line_end)
+            help_text_widget.tag_add("bullet_point", line_start, line_end)
+
+            # Aplica negrito ao nome da opção (texto depois de * até :)
+            colon_pos = help_text_widget.search(":", line_start, stopindex=line_end)
+            if colon_pos:
+                # Encontra o início do texto útil após o marcador '*', ignorando espaços
+                content_start_index = help_text_widget.search(r'\S', match_start + "+1c", stopindex=colon_pos, regexp=True)
+                if content_start_index:
+                     # Garante que o início seja após o marcador *
+                     if help_text_widget.compare(content_start_index, ">", match_start):
+                        help_text_widget.tag_add("option_name", content_start_index, colon_pos)
+
+            start_index = line_end
+
+        # Aplica tags aos sub-bullet points (-)
+        start_index = "1.0"
+        while True:
+            # Procura por '-' no início da linha, possivelmente com espaços antes
+            match_start = help_text_widget.search(r'^\s*-', start_index, stopindex=tk.END, regexp=True)
+            if not match_start: break
+            line_start = f"{match_start.split('.')[0]}.0"
+            line_end = f"{match_start.split('.')[0]}.end"
+            help_text_widget.tag_remove("normal_text", line_start, line_end)
+            help_text_widget.tag_add("sub_bullet_point", line_start, line_end)
+
+             # Aplica negrito ao nome da sub-opção (texto depois de - até :)
+            colon_pos = help_text_widget.search(":", line_start, stopindex=line_end)
+            if colon_pos:
+                # Encontra o início do texto útil após o marcador '-', ignorando espaços
+                content_start_index = help_text_widget.search(r'\S', match_start + "+1c", stopindex=colon_pos, regexp=True)
+                if content_start_index:
+                    # Garante que o início seja após o marcador -
+                    if help_text_widget.compare(content_start_index, ">", match_start):
+                        help_text_widget.tag_add("option_name", content_start_index, colon_pos)
+
+            start_index = line_end
+
+        # Aplica tag normal_text onde nenhuma outra tag principal foi aplicada
+        # (Isto é um fallback, pode não ser estritamente necessário dependendo da cobertura)
+        # help_text_widget.tag_raise("normal_text") # Pode não ser necessário
+
+        # Desabilita edição e adiciona botão Fechar
+        help_text_widget.config(state=tk.DISABLED)
+        close_button = ttk.Button(help_win, text="Fechar", command=help_win.destroy)
+        close_button.pack(pady=(5, 10))
+
+        help_win.wait_window()
 
 if __name__ == "__main__":
     root = tk.Tk()
