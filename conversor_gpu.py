@@ -409,7 +409,7 @@ class HeightmapGeneratorApp:
         self.terrace_levels_label = ttk.Label(post_proc_frame, text="Níveis:")
         self.terrace_levels_label.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
         self.terrace_levels_var = tk.IntVar(value=8)
-        self.terrace_levels_scale = ttk.Scale(post_proc_frame, from_=2, to=99, orient=tk.HORIZONTAL, variable=self.terrace_levels_var, command=lambda v: self.terrace_levels_var.set(int(float(v))))
+        self.terrace_levels_scale = ttk.Scale(post_proc_frame, from_=2, to=500, orient=tk.HORIZONTAL, variable=self.terrace_levels_var, command=lambda v: self.terrace_levels_var.set(int(float(v))))
         self.terrace_levels_scale.grid(row=0, column=2, padx=5, pady=5)
         self.terrace_levels_display = ttk.Label(post_proc_frame, textvariable=self.terrace_levels_var)
         self.terrace_levels_display.grid(row=0, column=3, padx=5, pady=5)
